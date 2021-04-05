@@ -2,6 +2,10 @@
 
 This work serves for comparison with [KVRangeDB][KVRangeDB repo] work on KVSSD.
 
+# YCSB binding
+
+A simple java native interface (JNI) implementation with YCSB client is created for KVRangeDB. Please refer to the repo [ycsb-bindings][ycsb-bindings repo].
+
 # Build
 
 ## build Samsung KVSSD
@@ -56,3 +60,4 @@ For more details, please refer to KVSSD_QUICK_START_GUIDE.pdf by Samsung (under 
 
 
 [KVRangeDB repo]:https://github.com/celery1124/kvrangedb
+[ycsb-bindgs repo]:https://github.com/celery1124/ycsb-bindings
