@@ -17,9 +17,9 @@
 #include <mutex>
 #include <atomic>
 
-#include "kvrangedb/slice.h"
-#include "kvrangedb/comparator.h"
-#include "kvrangedb/db.h"
+#include "rockskv/slice.h"
+#include "rockskv/comparator.h"
+#include "rockskv/db.h"
 
 //#define PERF_RD_LAT 1
 
@@ -50,7 +50,7 @@ struct thread_args{
   int key_mode;
   int key_offset;
   std::unordered_map<int, int> rd_lat;
-  kvrangedb::DB *db;
+  rockskv::DB *db;
 };
 
 void usage(char *program)
@@ -162,11 +162,11 @@ long fnvhash64(long val) {
 }
 
 
-class CustomComparator : public kvrangedb::Comparator {
+class CustomComparator : public rockskv::Comparator {
 public:
   CustomComparator() {}
   ~CustomComparator() {}
-  int Compare(const kvrangedb::Slice& a, const kvrangedb::Slice& b) const {
+  int Compare(const rockskv::Slice& a, const rockskv::Slice& b) const {
     return a.compare(b);
   }
 };
@@ -214,8 +214,8 @@ void stats_thread(int total_ops, int pool_interval_milisec, int print_interval_m
   }
 }
 
-int perform_read(int id, kvrangedb::DB *db, int count, uint8_t klen, uint32_t vlen, char *keys, int key_mode, int rd_nums, std::unordered_map<int, int>& rd_lat) {
-  kvrangedb::ReadOptions rdopts;
+int perform_read(int id, rockskv::DB *db, int count, uint8_t klen, uint32_t vlen, char *keys, int key_mode, int rd_nums, std::unordered_map<int, int>& rd_lat) {
+  rockskv::ReadOptions rdopts;
   rdopts.hint_packed = hint_packed;
   Random rdn(id);
   int ret;
@@ -260,14 +260,14 @@ int perform_read(int id, kvrangedb::DB *db, int count, uint8_t klen, uint32_t vl
       }
     }
 
-    kvrangedb::Slice db_key(key, klen);
+    rockskv::Slice db_key(key, klen);
     std::string val;
 
 #ifdef PERF_RD_LAT
     clock_gettime(CLOCK_REALTIME, &t1);
 #endif
 
-    kvrangedb::Status ret = db->Get(rdopts, db_key, &val);;
+    rockskv::Status ret = db->Get(rdopts, db_key, &val);;
 
 #ifdef PERF_RD_LAT
     clock_gettime(CLOCK_REALTIME, &t2);
@@ -292,8 +292,8 @@ int perform_read(int id, kvrangedb::DB *db, int count, uint8_t klen, uint32_t vl
   return SUCCESS;
 }
 
-int perform_iterator(kvrangedb::DB *db, int count, uint8_t klen, uint32_t vlen, char *keys, int key_mode, int it_nums) {
-  kvrangedb::ReadOptions rdopts;
+int perform_iterator(rockskv::DB *db, int count, uint8_t klen, uint32_t vlen, char *keys, int key_mode, int it_nums) {
+  rockskv::ReadOptions rdopts;
   rdopts.hint_packed = hint_packed;
   Random rdn(0);
   int ret;
@@ -337,10 +337,10 @@ int perform_iterator(kvrangedb::DB *db, int count, uint8_t klen, uint32_t vlen, 
       }
     }
 
-    kvrangedb::Slice seek_key(key, klen);
+    rockskv::Slice seek_key(key, klen);
     std::string val;
 
-    kvrangedb::Iterator *it = db->NewIterator(rdopts);
+    rockskv::Iterator *it = db->NewIterator(rdopts);
     it->Seek(seek_key);
 
     if (i%ACCUM_GRANU == (ACCUM_GRANU-1)) {
@@ -356,8 +356,8 @@ int perform_iterator(kvrangedb::DB *db, int count, uint8_t klen, uint32_t vlen, 
 }
 
 
-int perform_insertion(int id, kvrangedb::DB *db, int count, uint8_t klen, uint32_t vlen, char *keys, int key_mode, int key_offset) {
-  kvrangedb::WriteOptions wropts;
+int perform_insertion(int id, rockskv::DB *db, int count, uint8_t klen, uint32_t vlen, char *keys, int key_mode, int key_offset) {
+  rockskv::WriteOptions wropts;
   RandomGenerator gen;
   char *key   = (char*)malloc(klen);
   char *value = (char*)malloc(vlen);
@@ -399,10 +399,10 @@ int perform_insertion(int id, kvrangedb::DB *db, int count, uint8_t klen, uint32
     char *rand_val = gen.Generate(vlen);
     memcpy(value, rand_val, vlen);
     
-    kvrangedb::Slice db_key(key, klen);
-    kvrangedb::Slice db_val(value, vlen);
+    rockskv::Slice db_key(key, klen);
+    rockskv::Slice db_val(value, vlen);
 
-    kvrangedb::Status ret = db->Put(wropts, db_key, db_val);
+    rockskv::Status ret = db->Put(wropts, db_key, db_val);
     if( !ret.ok() ) {
       fprintf(stderr, "store tuple %s (%d) failed with error \n", std::string(key, klen).c_str(), i);
       free(key);
@@ -426,7 +426,7 @@ int perform_insertion(int id, kvrangedb::DB *db, int count, uint8_t klen, uint32
 }
 
 
-void do_io(int id, kvrangedb::DB *db, int count, uint8_t klen, uint32_t vlen, int op_type, char *keys, int rd_nums, int key_mode, int key_offset, std::unordered_map<int, int>& rd_lat) {
+void do_io(int id, rockskv::DB *db, int count, uint8_t klen, uint32_t vlen, int op_type, char *keys, int rd_nums, int key_mode, int key_offset, std::unordered_map<int, int>& rd_lat) {
 
   switch(op_type) {
   case WRITE_OP:
@@ -598,18 +598,12 @@ int main(int argc, char *argv[]) {
   }
   
   CustomComparator cmp;
-  kvrangedb::Options options;
+  rockskv::Options options;
   options.comparator = &cmp;
-  options.indexNum = 1;
-  options.indexType = kvrangedb::ROCKS;
-  options.packThres = packThres;
-  options.packThreadsNum = 12;
-  options.indexCacheSize = 512;
-  options.rfType = kvrangedb::RBloom;
-  options.statistics = kvrangedb::Options::CreateDBStatistics();
+  options.statistics = rockskv::Options::CreateDBStatistics();
 
-  kvrangedb::DB *db = NULL;
-  kvrangedb::DB::Open(options, dev_path, &db);
+  rockskv::DB *db = NULL;
+  rockskv::DB::Open(options, dev_path, &db);
 
   thread_args args[t];
   pthread_t tid[t];

@@ -1,7 +1,7 @@
 
 CC=g++
 INCLUDES=-I../include
-LIBS=-L../libs -pthread -lkvrangedb -lkvapi -std=c++11
+LIBS=-L../lib -pthread -lrockskv -lkvssd -lkvapi -std=c++11
 CXXFLAG=-O2 -fPIC -w -march=native
 CXXFLAG_DBG=-O0 -fPIC -w -march=native -g 
 
