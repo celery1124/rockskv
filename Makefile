@@ -11,6 +11,7 @@ INCLUDES=-I$(HOME)/include
 LIBS=-L$(HOME)/lib -Wl,-rpath,$(HOME)/lib -lrt -lpthread -lrocksdb -lkvssd -ltbb
 CXXFLAG=-fPIC -w -march=native -std=c++11 $(OPT)
 
+KVSSD_SRCS=$(HOME)/src/kvssd/kvssd.cc
 DB_SRCS=$(HOME)/src/db_impl.cc $(HOME)/src/db_iter.cc $(HOME)/src/hash.cc 
 UTIL_SRCS=$(HOME)/util/comparator.cc
 SRCS=$(DB_SRCS) $(UTIL_SRCS)
